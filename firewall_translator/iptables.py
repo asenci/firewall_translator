@@ -1,4 +1,5 @@
 from logging import debug, info
+import collections
 
 
 class Rule:
@@ -43,25 +44,46 @@ class Rule:
         return ' '.join(string)
 
 
-class Chain:
+class Chain(collections.MutableSequence, collections.Iterable):
     name = None
     rules = None
-    default_action = None
+    action = None
 
-    def __init__(self, name, rules=None, def_action='-'):
+    def __delitem__(self, index):
+        del(self.rules[index])
+
+    def __getitem__(self, index):
+        return self.rules[index]
+
+    def __init__(self, name, rules=None, action='-'):
         self.name = name
+        self.action = action
 
         if rules:
             self.rules = rules
         else:
             self.rules = []
 
+    def __iter__(self):
+        for rule in self.rules:
+            yield rule
+
+    def __len__(self):
+        return len(self.rules)
+
     def __repr__(self):
-        return '<{} {} Rules: {!r}'.format(
-            self.__class__.__name__, self.name, self.rules)
+        return '<{} {} {}>'.format(self.__class__.__name__, self.name, self.action)
+
+    def __setitem__(self, index, value):
+        self.rules[index] = value
 
     def __str__(self):
-        return '\n'.join(['-A {} {}'.format(self.name, rule) for rule in self.rules])
+        string = [':{} {} [0:0]'.format(self.name, self.action)]
+
+        for rule in self.rules:
+            string.append('-A {} {}'.format(self.name, rule))
+
+        return '\n'.join(string)
 
     def append(self, rule):
         self.rules.append(rule)
@@ -73,9 +95,15 @@ class Chain:
         self.rules.remove(rule)
 
 
-class Table:
+class Table(collections.MutableMapping):
     name = None
     chains = None
+
+    def __delitem__(self, key):
+        del(self.chains[key])
+
+    def __getitem__(self, key):
+        return self.chains[key]
 
     def __init__(self, name, chains=None):
         self.name = name
@@ -85,18 +113,47 @@ class Table:
         else:
             self.chains = {}
 
-    def new_chain(self, name, rules=None, def_action='-'):
+    def __iter__(self):
+        for chain in self.chains.values():
+            yield chain
+
+    def __len__(self):
+        return len(self.chains)
+
+    def __repr__(self):
+        return '<{} {} {}>'.format(self.__class__.__name__, self.name, list(self.chains))
+
+    def __setitem__(self, key, value):
+        self.chains[key] = value
+
+    def __str__(self):
+        string = ['*{}'.format(self.name)]
+
+        for chain in self.chains.values():
+            string.append(str(chain))
+
+        string.append('COMMIT')
+
+        return '\n'.join(string)
+
+    def new_chain(self, name, rules=None, action='-'):
         if name in self.chains:
             raise KeyError
 
-        self.chains[name] = Chain(name, rules, def_action)
+        self.chains[name] = Chain(name, rules, action)
 
     def delete_chain(self, name):
         del(self.chains[name])
 
 
-class RuleSet:
+class RuleSet(collections.MutableMapping):
     tables = None
+
+    def __delitem__(self, key):
+        del(self.tables[key])
+
+    def __getitem__(self, key):
+        return self.tables[key]
 
     def __init__(self, tables=None):
         if tables:
@@ -104,24 +161,45 @@ class RuleSet:
         else:
             self.tables = {
                 'filter': Table('filter', {
-                    'FORWARD': Chain('FORWARD', def_action='ACCEPT'),
-                    'INPUT': Chain('INPUT', def_action='ACCEPT'),
-                    'OUTPUT': Chain('OUTPUT', def_action='ACCEPT'),
+                    'FORWARD': Chain('FORWARD', action='ACCEPT'),
+                    'INPUT': Chain('INPUT', action='ACCEPT'),
+                    'OUTPUT': Chain('OUTPUT', action='ACCEPT'),
                 }),
                 'mangle': Table('mangle', {
-                    'FORWARD': Chain('FORWARD', def_action='ACCEPT'),
-                    'INPUT': Chain('INPUT', def_action='ACCEPT'),
-                    'OUTPUT': Chain('OUTPUT', def_action='ACCEPT'),
-                    'POSTROUTING': Chain('POSTROUTING', def_action='ACCEPT'),
-                    'PREROUTING': Chain('PREROUTING', def_action='ACCEPT'),
+                    'FORWARD': Chain('FORWARD', action='ACCEPT'),
+                    'INPUT': Chain('INPUT', action='ACCEPT'),
+                    'OUTPUT': Chain('OUTPUT', action='ACCEPT'),
+                    'POSTROUTING': Chain('POSTROUTING', action='ACCEPT'),
+                    'PREROUTING': Chain('PREROUTING', action='ACCEPT'),
                 }),
                 'nat': Table('nat', {
-                    'INPUT': Chain('INPUT', def_action='ACCEPT'),
-                    'OUTPUT': Chain('OUTPUT', def_action='ACCEPT'),
-                    'POSTROUTING': Chain('POSTROUTING', def_action='ACCEPT'),
-                    'PREROUTING': Chain('PREROUTING', def_action='ACCEPT'),
+                    'INPUT': Chain('INPUT', action='ACCEPT'),
+                    'OUTPUT': Chain('OUTPUT', action='ACCEPT'),
+                    'POSTROUTING': Chain('POSTROUTING', action='ACCEPT'),
+                    'PREROUTING': Chain('PREROUTING', action='ACCEPT'),
                 }),
             }
+
+    def __iter__(self):
+        for table in self.tables.values():
+            yield table
+
+    def __len__(self):
+        return len(self.tables)
+
+    def __repr__(self):
+        return '<{} {}>'.format(self.__class__.__name__, list(self.tables))
+
+    def __setitem__(self, key, value):
+        self.tables[key] = value
+
+    def __str__(self):
+        string = []
+
+        for table in self.tables.values():
+            string.append(str(table))
+
+        return '\n'.join(string)
 
     def read(self, rule_def):
         table = None
@@ -150,7 +228,7 @@ class RuleSet:
                 info('Table: {}, Chain: {}'.format(table, name))
 
                 if name not in self.tables[table].chains.keys():
-                    self.tables[table].new_chain(name, def_action=action)
+                    self.tables[table].new_chain(name, action=action)
 
             elif line.strip() == 'COMMIT':
                 debug('Finished reading table {}'.format(table))
