@@ -56,6 +56,13 @@ class Chain:
         else:
             self.rules = []
 
+    def __repr__(self):
+        return '<{} {} Rules: {!r}'.format(
+            self.__class__.__name__, self.name, self.rules)
+
+    def __str__(self):
+        return '\n'.join(['-A {} {}'.format(self.name, rule) for rule in self.rules])
+
     def append(self, rule):
         self.rules.append(rule)
 
