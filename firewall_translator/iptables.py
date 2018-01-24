@@ -12,7 +12,19 @@ class Rule:
         self.action_params = action_params
 
     def __repr__(self):
-        return '[{}:{!r}] {!r}'.format(self.action, self.action_params, self.matches)
+        string = '<{}'.format(self.__class__.__name__)
+
+        if self.match_params:
+            string += ' Match: {!r}'.format(self.match_params)
+
+        if self.action:
+            string += ' Action: {}'.format(self.action)
+
+        if self.action_params:
+            string += ' {!r}'.format(self.action_params)
+
+        string += '>'
+        return string
 
     def __str__(self):
         string = ''
