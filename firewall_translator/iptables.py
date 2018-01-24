@@ -149,3 +149,7 @@ class RuleSet:
 
                 info('Table: {}, Chain: {}, Action: {}, Params: {}, Matches: {}'.format(table, chain, action, action_params, matches))
                 self.tables[table].chains[chain].append(rule)
+
+    def read_from_file(self, file):
+        with open(file) as r:
+            self.read(r.read())
