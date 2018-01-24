@@ -11,6 +11,27 @@ class Rule:
         self.action = action
         self.action_params = action_params
 
+    def __repr__(self):
+        return '[{}:{!r}] {!r}'.format(self.action, self.action_params, self.matches)
+
+    def __str__(self):
+        string = ''
+
+        if self.matches:
+            for k, v in self.matches.items():
+                string += ' '
+                string += ' '.join([k, v])
+
+        if self.action:
+            string += ' -j {}'.format(self.action)
+
+        if self.action_params:
+            for k, v in self.action_params.items():
+                string += ' '
+                string += ' '.join([k, v])
+
+        return string
+
 
 class Chain:
     name = None
