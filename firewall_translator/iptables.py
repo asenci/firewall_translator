@@ -27,22 +27,20 @@ class Rule:
         return string
 
     def __str__(self):
-        string = ''
+        string = []
 
         if self.match_params:
             for k, v in self.match_params.items():
-                string += ' '
-                string += ' '.join([k, v])
+                string.append(' '.join([k, v]))
 
         if self.action:
-            string += ' -j {}'.format(self.action)
+            string.append('-j {}'.format(self.action))
 
         if self.action_params:
             for k, v in self.action_params.items():
-                string += ' '
-                string += ' '.join([k, v])
+                string.append(' '.join([k, v]))
 
-        return string
+        return ' '.join(string)
 
 
 class Chain:
