@@ -145,6 +145,12 @@ class RuleSet:
                         info(action)
                         action, action_params = action.split(' ', 1)
 
+                if action_params:
+                    action_params = action_params.strip().split(' ')
+                    action_params_keys = action_params[::2]
+                    action_params_values = action_params[1::2]
+                    action_params = dict(zip(action_params_keys, action_params_values))
+
                 rule = Rule(matches, action, action_params)
 
                 info('Table: {}, Chain: {}, Action: {}, Params: {}, Matches: {}'.format(table, chain, action, action_params, matches))
