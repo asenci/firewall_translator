@@ -2,12 +2,12 @@ from logging import debug, info
 
 
 class Rule:
-    matches = None
+    match_params = None
     action = None
     action_params = None
 
-    def __init__(self, matches=None, action=None, action_params=None):
-        self.matches = matches
+    def __init__(self, match_params=None, action=None, action_params=None):
+        self.match_params = match_params
         self.action = action
         self.action_params = action_params
 
@@ -29,8 +29,8 @@ class Rule:
     def __str__(self):
         string = ''
 
-        if self.matches:
-            for k, v in self.matches.items():
+        if self.match_params:
+            for k, v in self.match_params.items():
                 string += ' '
                 string += ' '.join([k, v])
 
@@ -160,15 +160,15 @@ class RuleSet:
                 chain, rule = rule.split(' ', 1)
 
                 if '-j' in rule:
-                    matches, action = rule.split('-j')
+                    match_params, action = rule.split('-j')
                 else:
-                    matches = rule
+                    match_params = rule
                     action = None
 
-                matches = matches.strip().split(' ')
-                matches_keys = matches[::2]
-                matches_values = matches[1::2]
-                matches = dict(zip(matches_keys, matches_values))
+                match_params = match_params.strip().split(' ')
+                match_params_keys = match_params[::2]
+                match_params_values = match_params[1::2]
+                match_params = dict(zip(match_params_keys, match_params_values))
 
                 action_params = None
 
@@ -184,9 +184,9 @@ class RuleSet:
                     action_params_values = action_params[1::2]
                     action_params = dict(zip(action_params_keys, action_params_values))
 
-                rule = Rule(matches, action, action_params)
+                rule = Rule(match_params, action, action_params)
 
-                info('Table: {}, Chain: {}, Action: {}, Params: {}, Matches: {}'.format(table, chain, action, action_params, matches))
+                info('Table: {}, Chain: {}, Action: {}, Params: {}, Matches: {}'.format(table, chain, action, action_params, match_params))
                 self.tables[table].chains[chain].append(rule)
 
     def read_from_file(self, file):
