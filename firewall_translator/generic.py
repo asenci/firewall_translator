@@ -87,31 +87,6 @@ class NAT:
     pass
 
 
-class Port:
-    name = None
-    number = None
-    protocol = None
-
-    def __init__(self, protocol, number, name=None):
-        self.protocol = protocol
-        self.number = number
-
-        if name is not None:
-            self.name = name
-
-    def __repr__(self):
-        if self.name:
-            return '<{} {}/{}({})>'.format(self.__class__.__name__, self.protocol, self.number, self.name)
-
-        return '<{} {}/{}>'.format(self.__class__.__name__, self.protocol, self.number)
-
-    def __str__(self):
-        if self.name:
-            return self.name
-
-        return '{}/{}'.format(self.protocol, self.number)
-
-
 class Protocol:
     name = None
     number = None
@@ -137,6 +112,31 @@ class Protocol:
 
 class Rule:
     pass
+
+
+class Service:
+    name = None
+    number = None
+    protocol = None
+
+    def __init__(self, protocol, number, name=None):
+        self.protocol = protocol
+        self.number = number
+
+        if name is not None:
+            self.name = name
+
+    def __repr__(self):
+        if self.name:
+            return '<{} {}/{}({})>'.format(self.__class__.__name__, self.protocol, self.number, self.name)
+
+        return '<{} {}/{}>'.format(self.__class__.__name__, self.protocol, self.number)
+
+    def __str__(self):
+        if self.name:
+            return self.name
+
+        return '{}/{}'.format(self.protocol, self.number)
 
 
 class TimeRange:
