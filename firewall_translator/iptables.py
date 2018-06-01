@@ -1,5 +1,26 @@
-from logging import debug, info
 import collections
+import logging
+
+import firewall_translator.generic
+
+
+class Action(firewall_translator.generic.Action):
+    def __init__(self, allow=False, reply=False, log=False):
+        if log:
+            raise NotImplementedError
+        super(Action, self).__init__(allow, reply, log)
+
+    def __repr__(self):
+        pass
+
+    def __str__(self):
+        if self.allow:
+            return 'ACCEPT'
+
+        elif self.reply:
+            return 'REJECT'
+
+        return 'DROP'
 
 
 class Rule:
@@ -43,6 +64,35 @@ class Rule:
 
         return ' '.join(string)
 
+    @staticmethod
+    def from_cli(string):
+        match_params, action = string.partition(' -j ')[::2]
+
+        match_params = match_params.strip().split(' ')
+        match_params_keys = match_params[::2]
+        match_params_values = match_params[1::2]
+        match_params = dict(zip(match_params_keys, match_params_values))
+
+        action_params = None
+
+        if action:
+            action = action.strip()
+            if ' ' in action:
+                info(action)
+                action, action_params = action.split(' ', 1)
+
+        if action_params:
+            action_params = action_params.strip().split(' ')
+            action_params_keys = action_params[::2]
+            action_params_values = action_params[1::2]
+            action_params = dict(zip(action_params_keys, action_params_values))
+
+        rule = Rule(match_params, action, action_params)
+
+        info('Table: {}, Chain: {}, Action: {}, Params: {}, Matches: {}'.format(table, chain, action, action_params,
+                                                                                match_params))
+        self.tables[table].chains[chain].append(rule)
+
 
 class Chain(collections.MutableSequence, collections.Iterable):
     name = None
@@ -59,10 +109,10 @@ class Chain(collections.MutableSequence, collections.Iterable):
         self.name = name
         self.action = action
 
-        if rules:
-            self.rules = rules
-        else:
+        if rules is None:
             self.rules = []
+        else:
+            self.rules = rules
 
     def __iter__(self):
         for rule in self.rules:
@@ -108,10 +158,10 @@ class Table(collections.MutableMapping):
     def __init__(self, name, chains=None):
         self.name = name
 
-        if chains:
-            self.chains = chains
-        else:
+        if chains is None:
             self.chains = {}
+        else:
+            self.chains = chains
 
     def __iter__(self):
         for chain in self.chains.values():
@@ -156,9 +206,7 @@ class RuleSet(collections.MutableMapping):
         return self.tables[key]
 
     def __init__(self, tables=None):
-        if tables:
-            self.tables = tables
-        else:
+        if tables is None:
             self.tables = {
                 'filter': Table('filter', {
                     'FORWARD': Chain('FORWARD', action='ACCEPT'),
@@ -179,6 +227,8 @@ class RuleSet(collections.MutableMapping):
                     'PREROUTING': Chain('PREROUTING', action='ACCEPT'),
                 }),
             }
+        else:
+            self.tables = tables
 
     def __iter__(self):
         for table in self.tables.values():
